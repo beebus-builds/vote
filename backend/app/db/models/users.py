@@ -1,10 +1,11 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, CheckConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (CheckConstraint("role in ('ADMIN', 'STUDENT')"),)
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
