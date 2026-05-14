@@ -17,8 +17,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
-_raw_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000")
-ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+_DEFAULT_ORIGINS = [
+    "http://localhost:3000",
+    "https://secureivote.vercel.app",
+]
+_raw_origins = os.getenv("CORS_ORIGINS", "")
+_env_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+ALLOWED_ORIGINS = list(set(_DEFAULT_ORIGINS + _env_origins))
 
 app.add_middleware(
     CORSMiddleware,
