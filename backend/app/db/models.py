@@ -7,7 +7,7 @@ from sqlalchemy import (
     Integer, String, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
-from .database import Base
+from app.db.database import Base
 
 
 def _utcnow():

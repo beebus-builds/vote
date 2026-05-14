@@ -15,7 +15,8 @@ from app.utils.helpers import authenticate, create_token
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.schemas import NotificationOut, TokenOut, UserOut
-from app.core.config import _EXT_MAP, _MAX_PHOTO_BYTES, ID_CARD_DIR
+from app.core.config import _EXT_MAP, _MAX_PHOTO_BYTES
+from app.core.cloudinary_storage import upload_to_cloudinary
 
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -98,21 +99,21 @@ async def register(
     content = await id_card.read()
     if len(content) > _MAX_PHOTO_BYTES:
         raise HTTPException(400, detail="ID card file must be smaller than 5 MB")
-    import io
-    id_card.file = io.BytesIO(content)
 
     if not _SAFE_TU_RE.match(tu_registration_number):
         raise HTTPException(400, detail="TU registration number contains invalid characters")
 
     ext  = _EXT_MAP[id_card.content_type]
-    dest = ID_CARD_DIR / f"id_{tu_registration_number}{ext}"
-    with dest.open("wb") as f:
-        shutil.copyfileobj(id_card.file, f)
+    id_card_url = upload_to_cloudinary(
+        content,
+        public_id=f"id_{tu_registration_number}",
+        folder="ivote/id_cards",
+        resource_type="auto",
+    )
 
-    relative = f"uploads/id_cards/id_{tu_registration_number}{ext}"
     return create_student(
         db, email, full_name, tu_registration_number,
-        faculty, year, password, relative,
+        faculty, year, password, id_card_url,
     )
 
 

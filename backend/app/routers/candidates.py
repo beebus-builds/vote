@@ -7,7 +7,8 @@ from app.db.models import Candidate, User, UserRole
 from app.schemas.schemas import CandidateOut, RejectReasonIn, RejectReasonIn
 from app.services.candidate_service import apply_candidacy, approve_candidate, get_all_candidates, get_approved_candidates, get_pending_candidates, increment_views, reject_candidate
 from app.utils.dependencies import require_admin, require_verified
-from app.core.config import _ALLOWED_PHOTO_TYPES, _EXT_MAP, _MAX_PHOTO_BYTES, CANDIDATE_PHOTO_DIR
+from app.core.config import _ALLOWED_PHOTO_TYPES, _EXT_MAP, _MAX_PHOTO_BYTES
+from app.core.cloudinary_storage import upload_to_cloudinary
 
 student_router = APIRouter(prefix ="/api", tags=["Candidates"])
 admin_router = APIRouter(prefix ="/api/admin", tags=["Candidates - Admin"])
@@ -71,15 +72,17 @@ async def apply(
         raise HTTPException(400, detail="Profile photo must be smaller than 5 MB")
 
     ext  = _EXT_MAP[photo.content_type]
-    dest = CANDIDATE_PHOTO_DIR / f"cand_{user.id}_{position_id}{ext}"
-    with dest.open("wb") as f:
-        f.write(content)
+    photo_url = upload_to_cloudinary(
+        content,
+        public_id=f"cand_{user.id}_{position_id}",
+        folder="ivote/candidate_photos",
+        resource_type="image",
+    )
 
-    relative = f"candidate_photos/cand_{user.id}_{position_id}{ext}"
     try:
         return apply_candidacy(
             db, user.id, position_id, manifesto,
-            party_affiliation, relative,
+            party_affiliation, photo_url,
         )
     except ValueError as e:
         raise HTTPException(400, detail=str(e))
