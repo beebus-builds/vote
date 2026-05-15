@@ -18,7 +18,6 @@ app = FastAPI(
 )
 
 _DEFAULT_ORIGINS = [
-    "http://localhost:3000",
     "https://secureivote.vercel.app",
 ]
 _raw_origins = os.getenv("CORS_ORIGINS", "")
